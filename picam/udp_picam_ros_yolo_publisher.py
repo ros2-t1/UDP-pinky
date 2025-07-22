@@ -15,7 +15,7 @@ class UdpPicamRosYoloPublisher(Node):
         super().__init__('udp_picam_ros_yolo_publisher')
         self.publisher_ = self.create_publisher(Detection2DArray, 'yolo_detections', 10)
         
-        self.udp_host = '127.0.0.1' # 송신자 IP 주소
+        self.udp_host = '127.0.0.1' # YOLO 노드가 실행되는 PC IP
         self.udp_port = 5005
         
         self.get_logger().info(f"Listening for UDP packets on {self.udp_host}:{self.udp_port}")
