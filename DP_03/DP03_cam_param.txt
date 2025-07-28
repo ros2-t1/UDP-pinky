@@ -1,0 +1,11 @@
+[CAMERA_PARAMS]
+camera_name = camera1
+resolution = [640 480]
+cx = 331.28656
+cy = 242.66754
+fx = 562.75803
+fy = 564.05573
+distortion_model = plumb_bob
+dist = [1.538044e-01 -7.581010e-01 -2.535588e-04 -7.386026e-04 9.812706e-01 0.000000e+00 0.000000e+00 0.000000e+00 ]
+
+Average err. of reprojection: 0.412729 pixels (OpenCV error=0.412729)
