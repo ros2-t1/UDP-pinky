@@ -16,7 +16,7 @@ distortion_coefficients = np.array([1.538044e-01, -7.581010e-01, -2.535588e-04, 
 
 # 멀티캐스트 그룹 주소 및 포트
 MCAST_GRP = '224.1.1.1'
-MCAST_PORT = 5007
+MCAST_PORT = 5003
 
 # 소켓 생성 (UDP)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
