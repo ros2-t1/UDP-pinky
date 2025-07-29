@@ -12,60 +12,59 @@
 
 ## 구성 요소
 
-- **`udp_picam_multi_streamer.py`:** Raspberry Pi에서 실행되는 스크립트로, 카메라 영상을 받아 UDP 멀티캐스트로 스트리밍합니다.
-- **`udp_image_saver.py`:** 스트림을 수신할 컴퓨터에서 실행되는 스크립트로, 영상을 화면에 표시하고 이미지 저장 기능을 제공합니다.
-- **`yolo_model/`:** YOLOv8 모델 파일(`yolov8s.pt`)이 저장되어 있습니다.
-- **`DP_03/`:** 3번 Pinky 로봇에서 실행되는 코드입니다.
-    - `dp03_yolo_aruco.py`: UDP 멀티캐스트(포트 5003)로 수신된 영상에서 YOLO 객체 탐지와 ArUco 마커 인식을 수행하고, 그 결과를 ROS2 토픽으로 발행합니다.
-    - `DP03_image_streamer.py`: 3번 Pinky 로봇의 카메라 영상을 UDP 멀티캐스트(포트 5003)로 스트리밍합니다.
-- **`DP_09/`:** 9번 Pinky 로봇에서 실행되는 코드입니다.
-    - `dp09_yolo_aruco.py`: UDP 멀티캐스트(포트 5009)로 수신된 영상에서 YOLO 객체 탐지와 ArUco 마커 인식을 수행하고, 그 결과를 ROS2 토픽으로 발행합니다.
-    - `DP09_image_streamer.py`: 9번 Pinky 로봇의 카메라 영상을 UDP 멀티캐스트(포트 5009)로 스트리밍합니다.
+- **`udp_picam_multi_streamer.py` & `udp_image_saver.py`**: 기본적인 UDP 영상 송수신 및 저장 기능을 위한 스크립트입니다.
+    - `udp_picam_multi_streamer.py`: Raspberry Pi에서 실행하여 카메라 영상을 UDP 멀티캐스트로 스트리밍합니다.
+    - `udp_image_saver.py`: PC에서 실행하여 스트림을 수신하고, 스페이스바를 눌러 이미지를 저장합니다.
+- **`yolo_model/`**: YOLOv8 모델 파일(`yolov8s.pt`)이 저장되어 있습니다.
+- **`DP_03/`**: 3번 Pinky 로봇 및 연동되는 PC를 위한 코드입니다.
+    - `DP03_image_streamer.py`: 3번 Pinky 로봇(Raspberry Pi)에서 실행하여 카메라 영상을 UDP 멀티캐스트(포트 5003)로 스트리밍합니다.
+    - `dp03_yolo_aruco.py`: PC(ROS2 워크스테이션)에서 실행하여 3번 로봇의 영상 스트림을 받아 YOLO 객체 탐지 및 ArUco 마커 인식을 수행하고, 결과를 ROS2 토픽으로 발행합니다.
+- **`DP_09/`**: 9번 Pinky 로봇 및 연동되는 PC를 위한 코드입니다.
+    - `DP09_image_streamer.py`: 9번 Pinky 로봇(Raspberry Pi)에서 실행하여 카메라 영상을 UDP 멀티캐스트(포트 5009)로 스트리밍합니다.
+    - `dp09_yolo_aruco.py`: PC(ROS2 워크스테이션)에서 실행하여 9번 로봇의 영상 스트림을 받아 YOLO 객체 탐지 및 ArUco 마커 인식을 수행하고, 결과를 ROS2 토픽으로 발행합니다.
 
 ## 사용 방법
 
 ### 1. 기본 영상 스트리밍 및 저장
 
-#### Raspberry Pi 설정
-1. Raspberry Pi에 카메라 모듈을 연결하고 활성화합니다.
-2. `udp_picam_multi_streamer.py` 파일을 Raspberry Pi에 복사합니다.
-3. 다음 명령어를 실행하여 영상 스트리밍을 시작합니다.
+#### Raspberry Pi (송신 측)
+1. `udp_picam_multi_streamer.py`를 실행합니다.
    ```bash
    python3 udp_picam_multi_streamer.py
    ```
 
-#### 클라이언트 (수신 컴퓨터) 설정
-1. `udp_image_saver.py` 파일을 스트림을 수신할 컴퓨터에 복사합니다.
-2. 다음 명령어를 실행하여 영상 스트림을 수신하고 화면에 표시합니다.
+#### PC (수신 측)
+1. `udp_image_saver.py`를 실행합니다.
    ```bash
    python3 udp_image_saver.py
    ```
-3. 영상 스트림 창이 활성화된 상태에서 **스페이스바**를 누르면 현재 프레임이 `~/Documents/img/` 폴더에 `capture_{타임스탬프}.png` 형식으로 저장됩니다.
-4. **'q'** 키를 누르면 프로그램을 종료합니다.
+2. 영상 창에서 **스페이스바**를 누르면 이미지가 저장되고, **'q'** 키로 종료합니다.
 
 ### 2. YOLO 및 ArUco 마커 동시 인식 (ROS2 환경)
 
-#### Pinky 로봇 (Raspberry Pi) 설정
-1. 각 로봇에 맞는 폴더(`DP_03` 또는 `DP_09`)의 `DPXX_image_streamer.py`를 실행하여 해당 포트로 영상을 스트리밍합니다.
+#### Pinky 로봇 (Raspberry Pi, 송신 측)
+1. 각 로봇에 맞는 `DPXX_image_streamer.py`를 실행하여 영상을 스트리밍합니다.
    ```bash
-   # 3번 로봇의 경우
+   # 3번 로봇
    python3 DP_03/DP03_image_streamer.py
 
-   # 9번 로봇의 경우
+   # 9번 로봇
    python3 DP_09/DP09_image_streamer.py
    ```
 
-#### ROS2 워크스테이션 설정
+#### PC (ROS2 워크스테이션, 수신 및 처리 측)
 1. ROS2 환경을 설정합니다.
-2. 각 로봇에 맞는 `dpXX_yolo_aruco.py`를 실행합니다.
+2. 로봇에 맞는 `dpXX_yolo_aruco.py`를 ROS2 노드로 실행합니다.
    ```bash
-   # 3번 로봇의 데이터를 처리할 경우
+   # 3번 로봇 데이터 처리
    ros2 run <your_package_name> dp03_yolo_aruco.py
 
-   # 9번 로봇의 데이터를 처리할 경우
+   # 9번 로봇 데이터 처리
    ros2 run <your_package_name> dp09_yolo_aruco.py
    ```
-3. 스크립트를 실행하면 YOLO와 ArUco 마커 탐지 결과가 ROS2 토픽 (`/yolo_detections`, `/aruco_rvec_topic`, `/aruco_tvec_topic`)으로 발행됩니다.
+3. 실행 후, 각 로봇의 YOLO와 ArUco 마커 탐지 결과가 아래의 네임스페이스를 가진 ROS2 토픽으로 발행되는 것을 확인할 수 있습니다:
+   - **3번 로봇:** `/DP03/yolo_detections`, `/DP03/aruco_rvec_topic`, `/DP03/aruco_tvec_topic`
+   - **9번 로봇:** `/DP09/yolo_detections`, `/DP09/aruco_rvec_topic`, `/DP09/aruco_tvec_topic`
 
 ## 요구 사항
 
