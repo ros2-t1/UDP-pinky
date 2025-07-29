@@ -22,9 +22,9 @@ class YoloArucoUdpRosPublisher(Node):
         super().__init__('yolo_aruco_udp_ros_publisher')
 
         # --- ROS2 퍼블리셔 초기화 ---
-        self.yolo_publisher_ = self.create_publisher(Detection2DArray, 'yolo_detections', 10)
-        self.rvec_publisher_ = self.create_publisher(Float32MultiArray, '/aruco_rvec_topic', 10)
-        self.tvec_publisher_ = self.create_publisher(Float32MultiArray, '/aruco_tvec_topic', 10)
+        self.yolo_publisher_ = self.create_publisher(Detection2DArray, '/DP03/yolo_detections', 10)
+        self.rvec_publisher_ = self.create_publisher(Float32MultiArray, '/DP03/aruco_rvec_topic', 10)
+        self.tvec_publisher_ = self.create_publisher(Float32MultiArray, '/DP03/aruco_tvec_topic', 10)
         self.get_logger().info("ROS2 퍼블리셔가 초기화되었습니다.")
 
         # --- UDP 수신 설정 ---
