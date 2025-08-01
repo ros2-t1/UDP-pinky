@@ -45,17 +45,17 @@ class YoloArucoUdpRosPublisher(Node):
 
         # --- ArUco 초기화 ---
         self.get_logger().info("ArUco 탐지기 초기화 중...")
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_7X7_250)
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
         self.aruco_params = cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
-        self.marker_length = 0.1 # 10cm
+        self.marker_length = 0.03 # 3cm
         self.get_logger().info("ArUco 탐지기가 초기화되었습니다.")
 
         # --- 카메라 파라미터 (ArUco 자세 추정용) ---
-        self.camera_matrix = np.array([[562.75803, 0, 331.28656],
-                                       [0, 564.05573, 242.66754],
+        self.camera_matrix = np.array([[557.97222, 0, 336.50260],
+                                       [0, 559.41434, 233.20376],
                                        [0, 0, 1]], dtype=np.float32)
-        self.dist_coeffs = np.array([1.538044e-01, -7.581010e-01, -2.535588e-04, -7.386026e-04, 9.812706e-01, 0.000000e+00, 0.000000e+00, 0.000000e+00], dtype=np.float32)
+        self.dist_coeffs = np.array([1.372049e-01, -6.539872e-01, -7.222502e-04, 2.262971e-03, 7.711442e-01, 0.000000e+00, 0.000000e+00, 0.000000e+00], dtype=np.float32)
 
         # --- 스레드 및 큐 설정 ---
         self.frame_queue = queue.Queue(maxsize=2)
