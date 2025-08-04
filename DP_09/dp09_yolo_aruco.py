@@ -48,6 +48,10 @@ class YoloArucoUdpRosPublisher(Node):
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
         self.aruco_params = cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
+        self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+        self.aruco_params.cornerRefinementWinSize = 20
+        self.aruco_params.cornerRefinementMaxIterations = 50
+        self.aruco_params.cornerRefinementMinAccuracy = 0.01
         self.marker_length = 0.03 # 3cm
         self.get_logger().info("ArUco 탐지기가 초기화되었습니다.")
 
@@ -85,20 +89,22 @@ class YoloArucoUdpRosPublisher(Node):
 
             np_arr = np.frombuffer(data, np.uint8)
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Gray 스케일
+            gray = cv2.bilateralFilter(gray, 9, 75, 75)
 
             if frame is None:
                 self.get_logger().warning("프레임 디코딩에 실패했습니다.")
                 return
 
             # --- ArUco 탐지 및 발행 ---
-            self.detect_and_publish_aruco(frame)
+            self.detect_and_publish_aruco(gray)
 
             # --- YOLO 탐지 및 발행 ---
             annotated_frame = self.detect_and_publish_yolo(frame)
             
             # --- ArUco 시각화 (YOLO 결과 위에) ---
             # (YOLO가 그린 프레임 위에 ArUco 정보를 다시 그립니다)
-            aruco_corners, aruco_ids, _ = self.aruco_detector.detectMarkers(frame)
+            aruco_corners, aruco_ids, _ = self.aruco_detector.detectMarkers(gray)
             if aruco_ids is not None:
                 rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(aruco_corners, self.marker_length, self.camera_matrix, self.dist_coeffs)
                 cv2.aruco.drawDetectedMarkers(annotated_frame, aruco_corners, aruco_ids)
@@ -120,14 +126,38 @@ class YoloArucoUdpRosPublisher(Node):
         except Exception as e:
             self.get_logger().error(f"처리 및 발행 중 오류 발생: {e}")
 
+    def convert_to_marker_frame(self, rvec, tvec):
+        """카메라 좌표계 기준 rvec, tvec을 마커 좌표계 기준으로 변환"""
+        # rvec와 tvec을 (3,) 형태로 보장
+        rvec = np.array(rvec).flatten()
+        tvec = np.array(tvec).flatten()
+        
+        # 회전 행렬 계산
+        R, _ = cv2.Rodrigues(rvec)
+        R_inv = R.T
+        
+        # tvec을 (3,1) 형태로 변환하여 행렬 곱셈 수행
+        tvec = tvec.reshape(3, 1)
+        tvec_marker = -np.dot(R_inv, tvec)
+        
+        # rvec_marker 계산
+        rvec_marker, _ = cv2.Rodrigues(R_inv)
+        
+        # (3,) 형태로 반환
+        return rvec_marker.flatten(), tvec_marker.flatten()
+    
     def detect_and_publish_aruco(self, frame):
         """ArUco 마커를 탐지하고 rvec/tvec 정보를 발행합니다."""
         aruco_corners, aruco_ids, _ = self.aruco_detector.detectMarkers(frame)
         if aruco_ids is not None:
             rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(aruco_corners, self.marker_length, self.camera_matrix, self.dist_coeffs)
             for i in range(len(aruco_ids)):
-                rvec_msg = Float32MultiArray(data=rvecs[i].flatten().tolist())
-                tvec_msg = Float32MultiArray(data=tvecs[i].flatten().tolist())
+                # 마커 좌표계 기준으로 변환
+                rvec_marker, tvec_marker = self.convert_to_marker_frame(rvecs[i], tvecs[i])
+                
+                # 변환된 rvec_marker, tvec_marker 발행
+                rvec_msg = Float32MultiArray(data=rvec_marker.tolist())
+                tvec_msg = Float32MultiArray(data=tvec_marker.tolist())
                 self.rvec_publisher_.publish(rvec_msg)
                 self.tvec_publisher_.publish(tvec_msg)
 
