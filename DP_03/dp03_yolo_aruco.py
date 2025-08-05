@@ -45,10 +45,14 @@ class YoloArucoUdpRosPublisher(Node):
 
         # --- ArUco 초기화 ---
         self.get_logger().info("ArUco 탐지기 초기화 중...")
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_7X7_250)
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
         self.aruco_params = cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
-        self.marker_length = 0.1 # 10cm
+        self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+        self.aruco_params.cornerRefinementWinSize = 20
+        self.aruco_params.cornerRefinementMaxIterations = 50
+        self.aruco_params.cornerRefinementMinAccuracy = 0.01
+        self.marker_length = 0.03 # 3cm
         self.get_logger().info("ArUco 탐지기가 초기화되었습니다.")
 
         # --- 카메라 파라미터 (ArUco 자세 추정용) ---
@@ -85,13 +89,15 @@ class YoloArucoUdpRosPublisher(Node):
 
             np_arr = np.frombuffer(data, np.uint8)
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Gray 스케일
+            gray = cv2.bilateralFilter(gray, 9, 75, 75)
 
             if frame is None:
                 self.get_logger().warning("프레임 디코딩에 실패했습니다.")
                 return
 
             # --- ArUco 탐지 및 발행 ---
-            self.detect_and_publish_aruco(frame)
+            self.detect_and_publish_aruco(gray)
 
             # --- YOLO 탐지 및 발행 ---
             annotated_frame = self.detect_and_publish_yolo(frame)
@@ -126,8 +132,12 @@ class YoloArucoUdpRosPublisher(Node):
         if aruco_ids is not None:
             rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(aruco_corners, self.marker_length, self.camera_matrix, self.dist_coeffs)
             for i in range(len(aruco_ids)):
-                rvec_msg = Float32MultiArray(data=rvecs[i].flatten().tolist())
-                tvec_msg = Float32MultiArray(data=tvecs[i].flatten().tolist())
+                # 마커 좌표계 기준으로 변환
+                rvec_marker, tvec_marker = self.convert_to_marker_frame(rvecs[i], tvecs[i])
+                
+                # 변환된 rvec_marker, tvec_marker 발행
+                rvec_msg = Float32MultiArray(data=rvec_marker.tolist())
+                tvec_msg = Float32MultiArray(data=tvec_marker.tolist())
                 self.rvec_publisher_.publish(rvec_msg)
                 self.tvec_publisher_.publish(tvec_msg)
 
