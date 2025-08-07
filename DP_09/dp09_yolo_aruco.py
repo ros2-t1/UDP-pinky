@@ -73,21 +73,26 @@ class YoloArucoUdpRosPublisher(Node):
         """UDP 패킷을 수신하여 큐에 넣는 스레드 함수"""
         while rclpy.ok():
             try:
-                data, _ = self.sock.recvfrom(65536)
-                if not self.frame_queue.full():
-                    self.frame_queue.put(data)
+                packed_data, _ = self.sock.recvfrom(65536)
+                if len(packed_data) >= 4: # Ensure there's at least enough for frame_id
+                    frame_id = struct.unpack('I', packed_data[:4])[0]
+                    img_data = packed_data[4:]
+                    if not self.frame_queue.full():
+                        self.frame_queue.put((frame_id, img_data))
+                else:
+                    self.get_logger().warning("수신된 데이터가 너무 짧습니다. 프레임 ID를 포함하지 않을 수 있습니다.")
             except Exception as e:
                 self.get_logger().error(f"프레임 수신 중 오류 발생: {e}")
 
     def process_and_publish(self):
         """큐에서 프레임을 가져와 처리하고 ROS2 토픽을 발행하는 콜백 함수"""
         try:
-            data = self.frame_queue.get_nowait()
+            frame_id, img_data = self.frame_queue.get_nowait()
             # 항상 최신 프레임을 처리하기 위해 큐를 비움
             while not self.frame_queue.empty():
-                data = self.frame_queue.get_nowait()
+                frame_id, img_data = self.frame_queue.get_nowait()
 
-            np_arr = np.frombuffer(data, np.uint8)
+            np_arr = np.frombuffer(img_data, np.uint8)
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Gray 스케일
             gray = cv2.bilateralFilter(gray, 9, 75, 75)
