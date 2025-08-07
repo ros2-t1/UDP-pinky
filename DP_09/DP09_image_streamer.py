@@ -109,6 +109,8 @@ def main():
         x, y, w, h = roi
         print("Undistortion map calculated.")
 
+        frame_count = 0 # Add frame count
+
         while True:
             frame = camera_stream.read()
             if frame is None:
@@ -131,13 +133,16 @@ def main():
             frame_bgr = cv2.cvtColor(undistorted_frame, cv2.COLOR_RGB2BGR)
 
             # 5. JPEG 압축
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
             result, img_encoded = cv2.imencode('.jpg', frame_bgr, encode_param)
 
             # 6. 압축된 이미지 전송
             if result:
                 try:
-                    sock.sendto(img_encoded.tobytes(), (MCAST_GRP, MCAST_PORT))
+                    # Pack frame_count with image data
+                    packed_data = struct.pack('I', frame_count) + img_encoded.tobytes()
+                    sock.sendto(packed_data, (MCAST_GRP, MCAST_PORT))
+                    frame_count += 1
                 except socket.error as e:
                     print(f"Socket Error: {e}")
                     break
