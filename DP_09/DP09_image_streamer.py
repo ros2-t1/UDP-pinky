@@ -17,7 +17,7 @@ distortion_coefficients = np.array([5.625842e-02, 1.511098e-02, -5.239435e-03, 3
 
 # 멀티캐스트 그룹 주소 및 포트
 MCAST_GRP = '224.1.1.1'
-MCAST_PORT = 5007
+MCAST_PORT = 5009
 
 class PicamStream:
     """
