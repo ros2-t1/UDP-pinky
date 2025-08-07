@@ -144,7 +144,7 @@ def main():
             frame_bgr = cv2.cvtColor(undistorted_frame, cv2.COLOR_RGB2BGR)
 
             # 5. JPEG 압축
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
             result, img_encoded = cv2.imencode('.jpg', frame_bgr, encode_param)
 
             # 6. 압축된 이미지 전송
