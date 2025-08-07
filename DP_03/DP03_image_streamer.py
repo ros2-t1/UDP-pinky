@@ -42,9 +42,20 @@ class PicamStream:
 
     def update(self):
         # Keep looping infinitely until the thread is stopped
+        frame_count_internal = 0
+        start_time_internal = time.time()
         while not self.stopped:
             try:
                 frame = self.picam2.capture_array()
+                frame_count_internal += 1
+                if frame_count_internal % 30 == 0: # Print every 30 frames
+                    elapsed_time_internal = time.time() - start_time_internal
+                    if elapsed_time_internal > 0:
+                        internal_fps = frame_count_internal / elapsed_time_internal
+                        print(f"Internal Camera Capture FPS: {internal_fps:.2f}")
+                    frame_count_internal = 0
+                    start_time_internal = time.time()
+
                 with self.lock:
                     self.frame = frame
                     self.new_frame_event.set()  # Signal that a new frame is available
